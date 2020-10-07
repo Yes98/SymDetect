@@ -1,10 +1,11 @@
-#include <igl/cotmatrix.h>
-#include <Eigen/Dense>
+//#include <igl/cotmatrix.h>
+//#include <Eigen/Dense>
 #include <list>
 #include <utility>
 #include <string>
 #include <cstdio>
-#include <Eigen/Sparse>
+#include <cmath>
+//#include <Eigen/Sparse>
 #include <iostream>
 #include <fstream>
 #include <regex>
@@ -212,7 +213,7 @@ void tangentAtPoint(vector<int> sP, vector<Point> &v)
         cout<<endl;    */    
     }
 }
-void writeSample(vector<int> sP, vector<Point> &v,vector<symPoint> m,vector<symPoint> Prem)
+void writeSample(vector<int> sP, vector<Point> &v,vector<pair<double,double>> m,vector<symPoint> Prem)
 {
     ofstream ObjFile,tF,pF;
     tF.open("rhoPoints.txt");
@@ -226,8 +227,8 @@ void writeSample(vector<int> sP, vector<Point> &v,vector<symPoint> m,vector<symP
     
     for (auto i : m)
     {
-        if(i.near) 
-            tF << i.rho << "," << i.theta <<endl;
+    
+        tF << i.first << "," << i.second <<endl;
 
     }
     for (auto i : Prem)
@@ -409,12 +410,15 @@ double epanKernal(double u)
     return (0.75)*(1-pow(u,2));
 }
 
-void meanshift(vector<symPoint> &p)
+vector<pair<double,double>> meanshift(vector<symPoint> &p)
 {
     int iterations = 5;
     /// 0.15 is ight for dist
-    double dist = 0.15;
+    double dist = 0.15
+    // less but tight
+    //double dist = 0.045;
     double h =0.15;
+    //performs mean shift
     for(int it =0; it < iterations;it++)
     {
         for(int i =0; i<p.size();i++)
@@ -451,6 +455,49 @@ void meanshift(vector<symPoint> &p)
            
         }
     }
+    // identify clusters
+    // section off cluster points, then take avaerage at each cluster to determine "peak"
+    vector<vector<pair<double,double>>> cTemp;
+    cTemp.push_back(vector<pair<double,double>> {make_pair(p[0].rho,p[0].theta)});
+    for(auto i : p)
+    {
+        if(i.near)
+        {
+            bool inC = false;
+            for(int j = 0; j<cTemp.size();j++)
+            {
+                // voted on the same cluster max, ie extremely close after mean shift
+                if(sqrt((pow(i.rho - cTemp[j][0].first,2) + pow(i.theta - cTemp[j][0].second,2)))<0.01)
+                {
+                    cTemp[j].push_back(make_pair(i.rho,i.theta));
+                    inC = true;
+                    break;
+                }
+            }
+            if(!inC)
+            {
+                cTemp.push_back(vector<pair<double,double>> {make_pair(i.rho,i.theta)});
+            }
+        }
+    }
+    vector<pair<double,double>> clusters;
+    for(auto i : cTemp)
+    {
+        // avoid small but distant clusters, may be unnecassary
+        if(i.size() > 5)
+        {
+            double sumX = 0;
+            double sumY = 0;
+            for(auto j : i)
+            {
+                sumX +=j.first;
+                sumY += j.second;
+            }
+            clusters.push_back(make_pair(sumX/i.size(),sumY/i.size()));
+        }
+    }
+
+    return clusters;
 }
 
 int main(int argc, char **argv)
@@ -469,10 +516,10 @@ int main(int argc, char **argv)
         cout<<p.size()<<endl;
         pair<pair<double,double>,pair<double,double>> norms = normalize(p);
         vector<symPoint> preP = p;
-        meanshift(p);
-        cout<<p.size()<<endl;
+        vector<pair<double,double>> clusters = meanshift(p);
+        cout<<clusters.size()<<endl;
 
-        writeSample(samplePoints,vertexs,p,preP);        
+        writeSample(samplePoints,vertexs,clusters,preP);        
        
        
         return 0;

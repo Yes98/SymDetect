@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.patches as pat
 import math as m
 def yS(rho,theta):
     t = [0,556]
@@ -11,6 +12,7 @@ def yS(rho,theta):
 k = open("PrerhoPoints.txt").readlines()
 xO,yO = [],[]
 jf = 0
+fig, ax = plt.subplots()
 for i in k:
     z = i.split(",")
     jf+=1
@@ -28,6 +30,8 @@ for i in f:
      
     rho = float(z[0])
     theta = float(z[1])
+    ax.add_artist(plt.Circle((rho,theta),radius=0.045,fill=False))
+    
     x.append(rho)
     y.append(theta)
 print(l)   

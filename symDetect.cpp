@@ -48,6 +48,8 @@ class Point
 struct symPoint
 {
     double rho,theta;
+    
+    double xM, yM;
     int p1,p2;
     bool near = true;
 };
@@ -316,6 +318,8 @@ vector<symPoint> pairing(vector<int> sP, vector<Point> &v)
                                 temp.theta = -theta;
                                 temp.p1 = i;
                                 temp.p2 = j;
+                                temp.xM = mX;
+                                temp.yM = mY;
                                 transForm.push_back(temp);
                             }
                             else
@@ -327,6 +331,8 @@ vector<symPoint> pairing(vector<int> sP, vector<Point> &v)
                                 temp.theta = (3.14159265359)-theta;
                                 temp.p1 = i;
                                 temp.p2 = j;
+                                temp.xM = mX;
+                                temp.yM = mY;
                                 transForm.push_back(temp);
                                 
                             }
@@ -339,6 +345,8 @@ vector<symPoint> pairing(vector<int> sP, vector<Point> &v)
                             temp.theta = theta;
                             temp.p1 = i;
                             temp.p2 = j;
+                            temp.xM = mX;
+                            temp.yM = mY;
                             transForm.push_back(temp);
                         }
                         
@@ -351,6 +359,8 @@ vector<symPoint> pairing(vector<int> sP, vector<Point> &v)
                         temp.theta = 0;
                         temp.p1 = i;
                         temp.p2 = j;
+                        temp.xM = mX;
+                        temp.yM = mY;
                         transForm.push_back(temp);
                         
                     }
@@ -364,6 +374,8 @@ vector<symPoint> pairing(vector<int> sP, vector<Point> &v)
                     temp.theta = 1.570796326790;
                     temp.p1 = i;
                     temp.p2 = j;
+                    temp.xM = mX;
+                    temp.yM = mY;
                     transForm.push_back(temp);
                      
                 }
@@ -414,7 +426,7 @@ vector<pair<double,double>> meanshift(vector<symPoint> &p)
 {
     int iterations = 5;
     /// 0.15 is ight for dist
-    double dist = 0.15
+    double dist = 0.15;
     // less but tight
     //double dist = 0.045;
     double h =0.15;
@@ -443,8 +455,8 @@ vector<pair<double,double>> meanshift(vector<symPoint> &p)
                 symPoint temp;
                 temp.rho = nX/d;
                 temp.theta = nY/d;
-                temp.p1 = p[i].p1;
-                temp.p2 = p[i].p2;
+                //temp.p1 = p[i].p1;
+                //temp.p2 = p[i].p2;
                 p[i] = temp;
            }
            else
@@ -499,7 +511,35 @@ vector<pair<double,double>> meanshift(vector<symPoint> &p)
 
     return clusters;
 }
+vector<symPoint> sigPointsFinder(vector<pair<double,double>>clusters, vector<symPoint> points)
+{
+    // finds transform points that lie wiethin the kernal of a voted on max point
+    vector<symPoint> sigPoints;
 
+    ofstream sigP;
+ 
+    sigP.open("sigPoints.txt");
+
+    double d = 0.05;    // distance from cluster max
+    for(auto c : clusters)
+    {
+        symPoint t;
+        t.rho = c.first;
+        t.theta = c.second;
+
+        // easy spot for gpu stuff to add
+        for(auto p : points)
+        {
+            if(symDistance(t,p) <= d)
+            {
+                sigPoints.push_back(p);
+                sigP << p.xM <<" "<< p.yM <<endl;
+            }
+        }
+    }
+    sigP.close();
+    return sigPoints;
+}
 int main(int argc, char **argv)
 {       
         int d = strlen(argv[1]);
@@ -518,6 +558,7 @@ int main(int argc, char **argv)
         vector<symPoint> preP = p;
         vector<pair<double,double>> clusters = meanshift(p);
         cout<<clusters.size()<<endl;
+        vector<symPoint> sigPoints =  sigPointsFinder(clusters,preP);
 
         writeSample(samplePoints,vertexs,clusters,preP);        
        

@@ -9,6 +9,8 @@ def yS(rho,theta):
         
         re.append(-(i*m.cos(theta)-rho)/m.sin(theta))
     return re
+x,y = [],[]
+"""
 k = open("PrerhoPoints.txt").readlines()
 xO,yO = [],[]
 jf = 0
@@ -22,7 +24,6 @@ for i in k:
     yO.append(theta)
 print(jf)
 f = open("rhoPoints.txt").readlines()
-x,y = [],[]
 l = 0
 for i in f:
     l+=1
@@ -35,7 +36,7 @@ for i in f:
     x.append(rho)
     y.append(theta)
 print(l)   
-""" 
+
     rho = float(z[0])
     theta = float(z[1])
     if theta ==0:
@@ -50,7 +51,13 @@ for i in j:
     #plt.plot([float(z[0]),float(z[2]),float(z[4])],[float(z[1]),float(z[3]),float(z[5])])
     x.append(float(z[2]))
     y.append(float(z[3]))
-
+"""
+sigX,sigY = [],[]
+j = open("sigPoints.txt").readlines()
+for i in j:
+    z = i.split(" ")
+    sigX.append(float(z[0]))
+    sigY.append(float(z[1]))
 f = open("butterfly.obj").readlines()
 for i in f:
     t = i.split(" ")
@@ -62,7 +69,8 @@ for i in f:
 
 plt.ylim((0,600))
 plt.xlim((0,600))
-"""
-plt.scatter(xO,yO,color="r")
+
+##plt.scatter(xO,yO,color="r")
 plt.scatter(x,y,color="b")
+plt.scatter(sigX,sigY,color="r")
 plt.show()

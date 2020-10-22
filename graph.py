@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as pat
 import math as m
+import sys
 def yS(rho,theta):
     t = [0,556]
     re = []
@@ -52,13 +53,16 @@ for i in j:
     x.append(float(z[2]))
     y.append(float(z[3]))
 """
+
 sigX,sigY = [],[]
 j = open("sigPoints.txt").readlines()
 for i in j:
     z = i.split(" ")
     sigX.append(float(z[0]))
     sigY.append(float(z[1]))
-f = open("butterfly.obj").readlines()
+
+t = sys.argv[1]
+f = open(t).readlines()
 for i in f:
     t = i.split(" ")
     if t[0] == 'l':
@@ -66,11 +70,49 @@ for i in f:
     else:
         x.append(float(t[1]))
         y.append(float(t[2]))
+"""
+lX, lY = [],[]
+l = open("sigLine.txt").readlines()
+for i in l:
+    z = i.split("/")
+    p1 = [int(i) for i in z[0].split(",")]
+    p2 = [int(i) for i in z[1].split(",")]ls
+    lX.append(p1[0])
+    lX.append(p2[0])
+    x.append(p1[0])
+    x.append(p2[0])
 
-plt.ylim((0,600))
-plt.xlim((0,600))
-
-##plt.scatter(xO,yO,color="r")
+    lY.append(p1[1])
+    lY.append(p2[1])
+    y.append(p1[1])
+    y.append(p2[1])
+"""
 plt.scatter(x,y,color="b")
 plt.scatter(sigX,sigY,color="r")
+mX, mY = [],[]
+m = open("matching.txt").readlines()
+for i in m:
+    if i == "PairS\n":
+        mX, mY = [],[]
+    elif i[0]=="m":
+        z = i.split(":")[1].split(",")
+        plt.scatter(int(z[0]),int(z[1])+10,c='y')
+        plt.scatter(int(z[2]),int(z[3])+10,c='r')
+
+    elif i == "PairE\n":
+        ##print("set")
+        plt.scatter(mX,mY)
+    else:
+        z = i.split(",")
+        mX.append(int(z[0]))
+        mY.append(int(z[1]))
+
+
+
+
+plt.ylim((0,max(y)+20))
+plt.xlim((0,max(x)+20))
+
+#plt.scatter(xO,yO,color="r")
+##plt.plot(lX,lY)
 plt.show()

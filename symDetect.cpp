@@ -609,7 +609,25 @@ cv::Mat_ <double> rotation(cv::Mat_<double> APrime, cv::Mat_<double> BPrime)
     cv::Mat_<double> H = APrime*BTrans;
     auto[U,S,V] = cv::SVD(H);
     cv::transpose(U, U);
-    return V*U;
+    cv::Mat_<double> VT;
+    cv::transpose(V, VT);
+    cv::Mat_<double> R = VT*U;
+    
+    if(cv::determinant(R) < 0)
+    {
+        cout<<"RDET: "<<cv::determinant(R)<<endl;
+        cout<<R<<endl;
+        
+        V.col(1) *= -1;
+        
+        //cv::transpose(U, U);
+        cv::transpose(V, VT);
+        R = VT*U;
+    }
+    
+    cout<<R<<endl;
+    return R;
+
 }
 
 cv::Mat_ <double> scaling(cv::Mat_<double> APrime, cv::Mat_<double> BPrime)
@@ -626,7 +644,13 @@ cv::Mat_ <double> scaling(cv::Mat_<double> APrime, cv::Mat_<double> BPrime)
     }
     cv::Mat_<double> T;
     cv::divide(D,Sp,T);
-    cv::pow(T,1/2,T);
+    //cout<<"in scaling: "<<T<<endl;
+    //cout<<"in scaling D: "<<D<<endl;
+    //cout<<"in scaling SP: "<<Sp<<endl;
+    //cv::pow(T,1/2,T);
+    T(0,0) = sqrt(T(0,0));
+    T(1,0) = sqrt(T(1,0));
+    //cout<<"in scaling sqrtT: "<<T<<endl;
     return T;
 
 }
@@ -653,7 +677,28 @@ double error(cv::Mat_<double> BPrime, cv::Mat_<double> s,cv::Mat_<double> R,cv::
     //cv::Mat_<double> err = cv::Mat_<double>::zeros(2,1);
     double err = 0;
     cv::Mat_<double> d = cv::Mat_<double>::zeros(2,1);
-  
+    cv::Mat_<double> TestTemp = R*APrime;
+    cout<<endl;
+    cout<<"ERROR"<<endl;
+    cout<<"APrime: "<<APrime<<endl;
+    cout<<"BPrime: "<<BPrime<<endl;
+    cout<<"R: "<<R<<endl;
+    //cout<<TestTemp<<endl;
+    // bottom row is switching away
+    TestTemp.row(0) =s.row(0)*TestTemp.row(0);
+    TestTemp.row(1) =s.row(1)*TestTemp.row(1);
+    cout<<"t: "<<t<<endl;
+    cout<<TestTemp<<endl;
+    TestTemp.row(0) =t.row(0)+TestTemp.row(0);
+    TestTemp.row(1) =t.row(1)+TestTemp.row(1);
+
+    //TestTemp += t;
+    cout<<"TestTemp: "<<TestTemp<<endl;
+    cout<<BPrime<<endl;
+    TestTemp = abs(BPrime - TestTemp);
+    cout<<TestTemp<<endl;
+    cout<<"MEANX: "<<cv::mean(TestTemp)<<endl;
+    return cv::mean(TestTemp)(0); 
     for(int i = 0; i < BPrime.cols; i++)
     {
         cv::Mat_<double> Temp= (R*APrime.col(i));
@@ -662,7 +707,8 @@ double error(cv::Mat_<double> BPrime, cv::Mat_<double> s,cv::Mat_<double> R,cv::
         
         cv::Mat_<double> TempD;
         cv::transpose(d,TempD);
-        
+        //cout<<"s:"<<s<<endl;
+        //cout<<"R:"<<R<<endl;
         //err += TempD*d;
         //change error to just avg
         //cout<<Temp+t<<endl;
@@ -696,7 +742,7 @@ bool patchGrowth (list<Point> &A, list<Point> &B, vector<int> &visited, vector<P
     
     //double m = cv::mean(err)(0);
     //cout<<"Error: "<<m<<endl;
-    if(err < 10)
+    if(err <= 5 )
     {
         Point endA = A.back(), endB = B.back();
         if(visited[endA.sampEdge1] == 0)
@@ -765,10 +811,10 @@ vector<pair<double,double>> verification(vector<vector<symPoint>> cluster,vector
                 // first circle around the points
                 //vector<Point> atemp = {verts[pI.sampEdge1], pI, verts[pI.sampEdge2]};
                 //vector<Point> btemp = {verts[pJ.sampEdge1], pJ, verts[pJ.sampEdge2]};
-                list<Point> aB = {/*verts[pI.sampEdge1],*/pI, verts[pI.sampEdge2]};
-                list<Point> bB = {/*verts[pJ.sampEdge1],*/pJ, verts[pJ.sampEdge2]};
-                list<Point> aF = {/*verts[pI.sampEdge2],*/pI, verts[pI.sampEdge1]};
-                list<Point> bF = {/*verts[pJ.sampEdge2],*/pJ, verts[pJ.sampEdge1]};
+                list<Point> aB = {verts[pI.sampEdge1],pI, verts[pI.sampEdge2]};
+                list<Point> bB = {verts[pJ.sampEdge1],pJ, verts[pJ.sampEdge2]};
+                list<Point> aF = {verts[pI.sampEdge2],pI, verts[pI.sampEdge1]};
+                list<Point> bF = {verts[pJ.sampEdge2],pJ, verts[pJ.sampEdge1]};
                 visited[verts[pI.sampEdge1].index] = 1;
                 visited[verts[pI.sampEdge2].index] = 1;
                 visited[verts[pJ.sampEdge1].index] = 1;
@@ -777,41 +823,48 @@ vector<pair<double,double>> verification(vector<vector<symPoint>> cluster,vector
                 // divide and conquor
                 // split up and check both directions from points seperatly
                 // swapping the bs
-                bool B = patchGrowth(aB,bF,visited,verts);
-                bool F = patchGrowth(aF,bB,visited,verts);
+                bool B = patchGrowth(aB,bB,visited,verts);
+                bool F = patchGrowth(aF,bF,visited,verts);
+                cout<<"TEAT: "<<t<<"######################################"<<endl;
                 if(B)
                 {   
+
                     //sets<<"PairS"<<endl;
                     cout<<"true"<<endl;
+                    sets<<"F"<<endl;
                     for(auto i : aB)
                     {
                         sets<<i.x<<","<<i.y<<endl;
                     }
+                    sets<<"PairE"<<endl;
+                    sets<<"B"<<endl;
                     for(auto i : bB)
                     {
                         sets<<i.x<<","<<i.y<<endl;
                     }
 
- //                   sets<<"PairE"<<endl;
+                    sets<<"PairE"<<endl;
                 }
                 if(F)
                 {
+                    sets<<"F"<<endl;
                     //cout<<"true"<<endl;
                     for(auto i : aF)
                     {
                         sets<<i.x<<","<<i.y<<endl;
                     }
+                    sets<<"PairE"<<endl;
+                    sets<<"B"<<endl;
                     for(auto i : bF)
                     {
                         sets<<i.x<<","<<i.y<<endl;
                     }
-                    //sets<<"PairE"<<endl;
+                    sets<<"PairE"<<endl;
                 }
             }
+            
         }
         
-        sets<<"PairE"<<endl;
-        t++;
     //}
     
     return patch;

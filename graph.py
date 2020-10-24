@@ -52,7 +52,6 @@ for i in j:
     #plt.plot([float(z[0]),float(z[2]),float(z[4])],[float(z[1]),float(z[3]),float(z[5])])
     x.append(float(z[2]))
     y.append(float(z[3]))
-"""
 
 sigX,sigY = [],[]
 j = open("sigPoints.txt").readlines()
@@ -60,7 +59,7 @@ for i in j:
     z = i.split(" ")
     sigX.append(float(z[0]))
     sigY.append(float(z[1]))
-
+"""
 t = sys.argv[1]
 f = open(t).readlines()
 for i in f:
@@ -88,20 +87,31 @@ for i in l:
     y.append(p2[1])
 """
 plt.scatter(x,y,color="b")
-plt.scatter(sigX,sigY,color="r")
+##plt.scatter(sigX,sigY,color="r")
 mX, mY = [],[]
 m = open("matching.txt").readlines()
+b,f = False, False
 for i in m:
     if i == "PairS\n":
         mX, mY = [],[]
     elif i[0]=="m":
         z = i.split(":")[1].split(",")
-        plt.scatter(int(z[0]),int(z[1])+10,c='y')
-        plt.scatter(int(z[2]),int(z[3])+10,c='r')
-
+        ##plt.scatter(int(z[0]),int(z[1]),c='y')
+        ##plt.scatter(int(z[2]),int(z[3]),c='g')
+        ##plt.plot([int(z[0]),int(z[2])],[int(z[1]),int(z[3])])
     elif i == "PairE\n":
         ##print("set")
-        plt.scatter(mX,mY)
+        if(b):
+            plt.scatter(mX,mY,c='w')
+        else:
+            plt.scatter(mX,mY,c='m')
+        mX, mY = [],[]
+    elif i == "B\n":
+        b = True
+        f = False
+    elif i == "F\n":
+        b = False
+        f = True
     else:
         z = i.split(",")
         mX.append(int(z[0]))
